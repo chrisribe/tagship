@@ -1,5 +1,7 @@
 FROM almir/webhook
 
+USER root
+
 # Install git and docker CLI
 RUN apk add --no-cache git docker-cli docker-cli-compose bash openssh-client
 
