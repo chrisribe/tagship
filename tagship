@@ -16,6 +16,19 @@ case "${1:-help}" in
       exit 1
     fi
     
+    # Validate format: must be user/repo
+    if [[ ! "$REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+      echo "❌ Invalid format: '$REPO'"
+      echo "   Must be: user/repo (e.g. chrisribe/mood-tube)"
+      exit 1
+    fi
+    
+    # Check for duplicate
+    if grep -q "\"$REPO\"" "$DEPLOY_SH"; then
+      echo "⚠️  '$REPO' is already registered"
+      exit 0
+    fi
+    
     REPO_NAME=$(echo "$REPO" | cut -d'/' -f2)
     DEPLOY_PATH="$STACKS_DIR/$REPO_NAME"
     
@@ -27,14 +40,9 @@ case "${1:-help}" in
       echo "📂 $DEPLOY_PATH already exists"
     fi
     
-    # Add to REPO_PATHS if not already there
-    if grep -q "\"$REPO\"" "$DEPLOY_SH"; then
-      echo "✅ Already in deploy.sh"
-    else
-      # Insert before the closing )
-      sed -i "/^)/i\\  [\"$REPO\"]=\"$DEPLOY_PATH\"" "$DEPLOY_SH"
-      echo "✅ Added to deploy.sh"
-    fi
+    # Add to REPO_PATHS
+    sed -i "/^)/i\\  [\"$REPO\"]=\"$DEPLOY_PATH\"" "$DEPLOY_SH"
+    echo "✅ Added to deploy.sh"
     
     TOKEN=$(grep -oP '(?<=DEPLOY_TOKEN=).+' "$TAGSHIP_DIR/.env")
     
