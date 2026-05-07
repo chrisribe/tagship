@@ -43,6 +43,8 @@ fi
 
 # 4. Install CLI
 chmod +x "$INSTALL_DIR/tagship"
+chmod +x "$INSTALL_DIR/scripts/"*.sh
+chmod +x "$INSTALL_DIR/entrypoint.sh"
 ln -sf "$INSTALL_DIR/tagship" /usr/local/bin/tagship
 echo "🛠️  CLI installed (tagship command)"
 
