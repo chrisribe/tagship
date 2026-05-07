@@ -101,7 +101,32 @@ case "${1:-help}" in
     ;;
     
   token)
-    grep -oP '(?<=DEPLOY_TOKEN=).+' "$TAGSHIP_DIR/.env"
+    TOKEN=$(grep -oP '(?<=DEPLOY_TOKEN=).+' "$TAGSHIP_DIR/.env")
+    echo ""
+    echo "Add this to each repo on GitHub:"
+    echo "  Settings → Secrets → Actions → New repository secret"
+    echo ""
+    echo "  Name:  DEPLOY_TOKEN"
+    echo "  Value: $TOKEN"
+    echo ""
+    ;;
+    
+  test)
+    # Self-test: POST to local webhook to verify token + config
+    TOKEN=$(grep -oP '(?<=DEPLOY_TOKEN=).+' "$TAGSHIP_DIR/.env")
+    REPO=${2:-"chrisribe/tagship"}
+    echo "🧪 Testing webhook with repo=$REPO tag=test-dry-run..."
+    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:9000/hooks/deploy \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer $TOKEN" \
+      -d "{\"repo\":\"$REPO\",\"tag\":\"test-dry-run\"}")
+    if [ "$RESPONSE" = "200" ]; then
+      echo "✅ Token valid, webhook triggered (check logs for dry-run result)"
+    else
+      echo "❌ Failed — HTTP $RESPONSE"
+      echo "   Check: tagship token matches what the container sees"
+      echo "   Try: tagship restart (rebuilds with latest .env)"
+    fi
     ;;
     
   restart)
@@ -142,6 +167,7 @@ case "${1:-help}" in
     echo "  status              Container + recent deploys"
     echo "  logs [n]            Tail deploy logs"
     echo "  token               Show deploy token"
+    echo "  test [user/repo]    Test webhook locally (verifies token works)"
     echo "  restart             Rebuild & restart webhook"
     echo "  version             Show tagship version"
     echo "  versions            Show deployed app versions"
