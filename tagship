@@ -36,11 +36,25 @@ case "${1:-help}" in
       echo "✅ Added to deploy.sh"
     fi
     
+    TOKEN=$(grep -oP 'Bearer \K[^"]+' "$TAGSHIP_DIR/hooks.json")
+    
     echo ""
-    echo "Done! Now:"
-    echo "  1. Add DEPLOY_TOKEN secret to $REPO on GitHub"
-    echo "  2. Copy workflow: cp $TAGSHIP_DIR/deploy.yml $DEPLOY_PATH/.github/workflows/"
-    echo "  3. Deploy: cd $DEPLOY_PATH && git tag v1.0.0 && git push --tags"
+    echo "✅ Registered on server!"
+    echo ""
+    echo "Now run on your dev machine:"
+    echo "────────────────────────────────────────────────"
+    echo "  cd $REPO_NAME"
+    echo "  mkdir -p .github/workflows"
+    echo "  curl -sL https://raw.githubusercontent.com/chrisribe/tagship/main/deploy.yml > .github/workflows/deploy.yml"
+    echo "  git add .github/workflows && git commit -m \"Add tagship deploy\" && git push"
+    echo "────────────────────────────────────────────────"
+    echo ""
+    echo "Then add this secret to $REPO on GitHub:"
+    echo "  Settings → Secrets → Actions → New secret"
+    echo "  Name:  DEPLOY_TOKEN"
+    echo "  Value: $TOKEN"
+    echo ""
+    echo "Deploy with: git tag v1.0.0 && git push --tags"
     ;;
     
   remove)
