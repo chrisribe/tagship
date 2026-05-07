@@ -16,7 +16,7 @@
     "trigger-rule": {
       "match": {
         "type": "value",
-        "value": "Bearer YOUR_DEPLOY_TOKEN",
+        "value": "Bearer ${DEPLOY_TOKEN}",
         "parameter": {
           "source": "header",
           "name": "Authorization"

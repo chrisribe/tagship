@@ -23,12 +23,13 @@ fi
 cd "$INSTALL_DIR"
 
 # 2. Generate deploy token
-if grep -q "YOUR_DEPLOY_TOKEN" hooks.json; then
-  sed -i "s/YOUR_DEPLOY_TOKEN/$DEPLOY_TOKEN/" hooks.json
-  echo "🔑 Generated deploy token"
+if [ -f "$INSTALL_DIR/.env" ]; then
+  echo "🔑 .env exists — skipping token generation"
+  DEPLOY_TOKEN=$(grep DEPLOY_TOKEN "$INSTALL_DIR/.env" | cut -d= -f2)
 else
-  echo "🔑 Token already set — skipping"
-  DEPLOY_TOKEN="(existing — check hooks.json)"
+  echo "DEPLOY_TOKEN=$DEPLOY_TOKEN" > "$INSTALL_DIR/.env"
+  chmod 600 "$INSTALL_DIR/.env"
+  echo "🔑 Generated deploy token → .env"
 fi
 
 # 3. Setup SSH key

@@ -36,7 +36,7 @@ case "${1:-help}" in
       echo "✅ Added to deploy.sh"
     fi
     
-    TOKEN=$(grep -oP 'Bearer \K[^"]+' "$TAGSHIP_DIR/hooks.json")
+    TOKEN=$(grep -oP '(?<=DEPLOY_TOKEN=).+' "$TAGSHIP_DIR/.env")
     
     echo ""
     echo "✅ Registered on server!"
@@ -93,7 +93,7 @@ case "${1:-help}" in
     ;;
     
   token)
-    grep -oP 'Bearer \K[^"]+' "$TAGSHIP_DIR/hooks.json"
+    grep -oP '(?<=DEPLOY_TOKEN=).+' "$TAGSHIP_DIR/.env"
     ;;
     
   restart)

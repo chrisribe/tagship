@@ -5,10 +5,11 @@ services:
       dockerfile: webhook.dockerfile
     container_name: tagship
     restart: unless-stopped
+    env_file: .env
     ports:
       - "9000:9000"
     volumes:
-      - ./hooks.json:/etc/webhook/hooks.json:ro
+      - ./hooks.json:/etc/webhook/hooks.json.template:ro
       - ./scripts:/scripts
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/stacks:/opt/stacks
@@ -16,7 +17,6 @@ services:
       - ~/.ssh/known_hosts:/root/.ssh/known_hosts:ro
     networks:
       - proxy-net
-    command: -hooks=/etc/webhook/hooks.json -verbose
 
 networks:
   proxy-net:
