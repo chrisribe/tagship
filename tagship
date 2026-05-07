@@ -110,6 +110,26 @@ case "${1:-help}" in
     echo "✅ Restarted"
     ;;
     
+  version)
+    cd "$TAGSHIP_DIR"
+    TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "untagged")
+    HASH=$(git rev-parse --short HEAD)
+    echo "tagship $TAG ($HASH)"
+    ;;
+    
+  versions)
+    echo "📋 Deployed versions:"
+    grep -oP '"\K[^"]+(?="\]=)' "$DEPLOY_SH" | while read -r repo; do
+      path=$(grep "\"$repo\"" "$DEPLOY_SH" | grep -oP '="\K[^"]+')
+      if [ -d "$path/.git" ]; then
+        ver=$(cd "$path" && git describe --tags --exact-match 2>/dev/null || cd "$path" && git rev-parse --short HEAD)
+        echo "  $repo → $ver"
+      else
+        echo "  $repo → (not cloned)"
+      fi
+    done
+    ;;
+    
   *)
     echo "⚓ Tagship — tag it, ship it"
     echo ""
@@ -123,5 +143,7 @@ case "${1:-help}" in
     echo "  logs [n]            Tail deploy logs"
     echo "  token               Show deploy token"
     echo "  restart             Rebuild & restart webhook"
+    echo "  version             Show tagship version"
+    echo "  versions            Show deployed app versions"
     ;;
 esac
