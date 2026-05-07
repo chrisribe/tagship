@@ -1,0 +1,27 @@
+[
+  {
+    "id": "deploy",
+    "execute-command": "/scripts/deploy.sh",
+    "command-working-directory": "/scripts",
+    "pass-arguments-to-command": [
+      {
+        "source": "payload",
+        "name": "repo"
+      },
+      {
+        "source": "payload",
+        "name": "tag"
+      }
+    ],
+    "trigger-rule": {
+      "match": {
+        "type": "value",
+        "value": "Bearer YOUR_DEPLOY_TOKEN",
+        "parameter": {
+          "source": "header",
+          "name": "Authorization"
+        }
+      }
+    }
+  }
+]

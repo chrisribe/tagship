@@ -1,0 +1,23 @@
+services:
+  webhook:
+    build:
+      context: .
+      dockerfile: webhook.dockerfile
+    container_name: tagship
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./hooks.json:/etc/webhook/hooks.json:ro
+      - ./scripts:/scripts
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/stacks:/opt/stacks
+      - ~/.ssh/id_deploy:/root/.ssh/id_ed25519:ro
+      - ~/.ssh/known_hosts:/root/.ssh/known_hosts:ro
+    networks:
+      - proxy-net
+    command: -hooks=/etc/webhook/hooks.json -verbose
+
+networks:
+  proxy-net:
+    external: true
