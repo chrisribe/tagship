@@ -33,80 +33,87 @@ git tag v1.2.0 && git push --tags
 
 ## Server Setup (one-time)
 
-**1. Clone tagship on your server:**
 ```bash
-cd /opt/stacks   # or wherever you keep your apps
-git clone git@github.com:yourusername/tagship.git
-cd tagship
+curl -sL https://raw.githubusercontent.com/chrisribe/tagship/main/install.sh | bash
 ```
 
-**2. Create deploy SSH key:**
-```bash
-./scripts/setup-deploy-key.sh
-# Copy the displayed public key → GitHub → Settings → SSH keys → New
-```
+This will:
+- Clone tagship to `/opt/stacks/tagship`
+- Generate a deploy token
+- Create an SSH deploy key
+- Build and start the webhook container
+- Install the `tagship` CLI
 
-**3. Set your deploy token:**
-```bash
-# Generate a random token
-openssl rand -hex 32
+**After install, do these two manual steps:**
 
-# Paste it into hooks.json, replacing YOUR_DEPLOY_TOKEN
-# Include the "Bearer " prefix: "Bearer <your-token>"
-nano hooks.json
-```
+1. **Add SSH key to GitHub** — Copy the key displayed by the installer →
+   GitHub → Settings → SSH and GPG keys → New SSH key
 
-**4. Add your repos to deploy.sh:**
-```bash
-nano scripts/deploy.sh
-# Edit REPO_PATHS to map your repos to server paths:
-# ["yourusername/your-repo"]="/opt/stacks/your-repo"
-```
-
-**5. Start the webhook container:**
-```bash
-docker compose -f docker-compose.webhook.yml up -d --build
-```
-
-**6. Add NPM proxy host:**
-- Domain: `deploy.yourdomain.com`
-- Forward to: `tagship:9000`
-- SSL: enabled
+2. **Add NPM proxy host:**
+   - Domain: `tagship.yourdomain.com`
+   - Forward to: `tagship:9000`
+   - SSL: enabled
 
 ## Per-Repo Setup
 
 For each repo you want to auto-deploy:
 
-**1. Add the workflow:**
+**Step 1 — Add the workflow file (on your dev machine):**
 ```bash
+cd your-repo
 mkdir -p .github/workflows
-cp /opt/stacks/tagship/deploy.yml .github/workflows/deploy.yml
+curl -sL https://raw.githubusercontent.com/chrisribe/tagship/main/deploy.yml > .github/workflows/deploy.yml
+```
+Edit the URL in the file to match your domain (`tagship.yourdomain.com`), then:
+```bash
 git add .github/workflows/deploy.yml
 git commit -m "Add tagship deploy workflow"
 git push
 ```
 
-**2. Add GitHub secret:**
+**Step 2 — Add deploy token as GitHub secret:**
 - Repo → Settings → Secrets and variables → Actions → New secret
-- Name: `DEPLOY_TOKEN` — Value: (same token as in hooks.json)
+- Name: `DEPLOY_TOKEN`
+- Value: run `tagship token` on your server to get it
 
-**3. Clone repo on server** (if not already):
+**Step 3 — Register repo on server (if not already done):**
 ```bash
-cd /opt/stacks
-git clone git@github.com:yourusername/your-repo.git
+tagship add yourusername/your-repo
 ```
 
-**4. Deploy:**
+**Step 4 — Deploy:**
 ```bash
 git tag v1.0.0 && git push --tags
 ```
 
+That's it. Every future `git tag vX.Y.Z && git push --tags` auto-deploys.
+
+## CLI Reference
+
+```bash
+tagship add <user/repo>     # Register a repo for auto-deploy
+tagship remove <user/repo>  # Unregister a repo
+tagship list                # Show registered repos
+tagship status              # Container health + recent deploys
+tagship logs [n]            # Tail deploy logs
+tagship token               # Show deploy token (for GitHub secrets)
+tagship restart             # Rebuild & restart webhook
+```
+
 ## Adding a New Repo Later
 
-1. Clone it to your server under `/opt/stacks/`
-2. Add an entry to `REPO_PATHS` in `scripts/deploy.sh`
-3. Add `DEPLOY_TOKEN` secret to the repo on GitHub
-4. Copy `deploy.yml` to `.github/workflows/` in the repo
+```bash
+# On server:
+tagship add yourusername/new-repo
+
+# On dev machine:
+cd new-repo
+mkdir -p .github/workflows
+curl -sL https://raw.githubusercontent.com/chrisribe/tagship/main/deploy.yml > .github/workflows/deploy.yml
+# Edit URL, commit, push
+# Add DEPLOY_TOKEN secret on GitHub
+# Done — git tag v1.0.0 && git push --tags
+```
 
 ## Known Gaps
 
