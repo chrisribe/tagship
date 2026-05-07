@@ -72,7 +72,8 @@ git push
 ```
 
 **Step 2 — Add deploy token as GitHub secret:**
-- Repo → Settings → Secrets and variables → Actions → New secret
+- Repo → Settings → Secrets and variables → Actions → **Secrets tab** (not Variables)
+- Click **"New repository secret"**
 - Name: `DEPLOY_TOKEN`
 - Value: run `tagship token` on your server to get it
 
