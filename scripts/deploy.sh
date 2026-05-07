@@ -27,6 +27,11 @@ git fetch --tags
 git reset --hard
 git checkout "tags/$TAG"
 
-docker compose up --build -d
+# Rebuild if Dockerfile exists, otherwise restart to pick up volume changes
+if [ -f Dockerfile ] || grep -q "build:" docker-compose.yml 2>/dev/null; then
+  docker compose up --build -d
+else
+  docker compose restart
+fi
 
 echo "Done: $REPO @ $TAG"
