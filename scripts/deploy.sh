@@ -23,7 +23,7 @@ echo "Deploying $REPO @ $TAG to $DEPLOY_DIR"
 
 cd "$DEPLOY_DIR"
 
-git fetch --tags
+git fetch --tags --force
 git reset --hard
 git checkout "tags/$TAG"
 
