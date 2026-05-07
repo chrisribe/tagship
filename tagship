@@ -1,0 +1,105 @@
+#!/bin/bash
+# Tagship CLI — manage your deploy pipeline
+# Usage: tagship <command> [args]
+set -e
+
+TAGSHIP_DIR="/opt/stacks/tagship"
+DEPLOY_SH="$TAGSHIP_DIR/scripts/deploy.sh"
+STACKS_DIR="/opt/stacks"
+
+case "${1:-help}" in
+  add)
+    # tagship add chrisribe/mood-tube
+    REPO=$2
+    if [ -z "$REPO" ]; then
+      echo "Usage: tagship add <user/repo>"
+      exit 1
+    fi
+    
+    REPO_NAME=$(echo "$REPO" | cut -d'/' -f2)
+    DEPLOY_PATH="$STACKS_DIR/$REPO_NAME"
+    
+    # Clone if not exists
+    if [ ! -d "$DEPLOY_PATH" ]; then
+      echo "📥 Cloning $REPO to $DEPLOY_PATH..."
+      git clone "git@github.com:${REPO}.git" "$DEPLOY_PATH"
+    else
+      echo "📂 $DEPLOY_PATH already exists"
+    fi
+    
+    # Add to REPO_PATHS if not already there
+    if grep -q "\"$REPO\"" "$DEPLOY_SH"; then
+      echo "✅ Already in deploy.sh"
+    else
+      # Insert before the closing )
+      sed -i "/^)/i\\  [\"$REPO\"]=\"$DEPLOY_PATH\"" "$DEPLOY_SH"
+      echo "✅ Added to deploy.sh"
+    fi
+    
+    echo ""
+    echo "Done! Now:"
+    echo "  1. Add DEPLOY_TOKEN secret to $REPO on GitHub"
+    echo "  2. Copy workflow: cp $TAGSHIP_DIR/deploy.yml $DEPLOY_PATH/.github/workflows/"
+    echo "  3. Deploy: cd $DEPLOY_PATH && git tag v1.0.0 && git push --tags"
+    ;;
+    
+  remove)
+    REPO=$2
+    if [ -z "$REPO" ]; then
+      echo "Usage: tagship remove <user/repo>"
+      exit 1
+    fi
+    sed -i "/\"$REPO\"/d" "$DEPLOY_SH"
+    echo "✅ Removed $REPO from deploy.sh (files untouched)"
+    ;;
+    
+  list)
+    echo "📋 Registered repos:"
+    grep -oP '"\K[^"]+(?="\]=)' "$DEPLOY_SH" | while read -r repo; do
+      path=$(grep "$repo" "$DEPLOY_SH" | grep -oP '="\K[^"]+')
+      if [ -d "$path" ]; then
+        echo "  ✅ $repo → $path"
+      else
+        echo "  ❌ $repo → $path (missing!)"
+      fi
+    done
+    ;;
+    
+  status)
+    echo "⚓ Tagship Status"
+    echo ""
+    docker ps --filter "name=tagship" --format "  Container: {{.Names}} | {{.Status}}"
+    echo ""
+    echo "Recent deploys:"
+    docker logs tagship --tail 10 2>&1 | grep -i "deploy\|done\|error" || echo "  (none)"
+    ;;
+    
+  logs)
+    docker logs tagship --tail "${2:-50}" -f
+    ;;
+    
+  token)
+    grep -oP 'Bearer \K[^"]+' "$TAGSHIP_DIR/hooks.json"
+    ;;
+    
+  restart)
+    cd "$TAGSHIP_DIR"
+    docker compose -f docker-compose.webhook.yml up -d --build
+    echo "✅ Restarted"
+    ;;
+    
+  *)
+    echo "⚓ Tagship — tag it, ship it"
+    echo ""
+    echo "Usage: tagship <command>"
+    echo ""
+    echo "Commands:"
+    echo "  add <user/repo>     Register a repo for auto-deploy"
+    echo "  remove <user/repo>  Unregister a repo"
+    echo "  list                Show registered repos"
+    echo "  status              Container + recent deploys"
+    echo "  logs [n]            Tail deploy logs"
+    echo "  token               Show deploy token"
+    echo "  restart             Rebuild & restart webhook"
+    ;;
+esac
